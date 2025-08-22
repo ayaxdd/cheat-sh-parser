@@ -31,9 +31,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	file, err := os.OpenFile("out/out.md", os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Fprintln(file, string(resource))
+	defer file.Close()
+	fmt.Fprint(file, string(resource))
 }
