@@ -17,25 +17,29 @@ func main() {
 		log.Fatal("error: empty parameters; use cheatsh -h")
 	}
 
-	config, err := ParseArgs(args)
+	cfg, err := NewConfig(args)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = config.ValidateArgs()
+	err = cfg.ValidateArgs()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	resource, err := GetResource(config.Source)
+	resource, err := GetResource(cfg.Source)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	file, err := os.OpenFile("out/out.md", os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
+	w := os.Stdin
+	if cfg.IsFile == true {
+		w, err = os.OpenFile(cfg.FileName, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer w.Close()
 	}
-	defer file.Close()
-	fmt.Fprint(file, string(resource))
+
+	fmt.Fprint(w, string(resource))
 }

@@ -7,47 +7,51 @@ import (
 
 // Реализация - curl <source> -> format output -> os.Stdin > file name
 
-type UserInput struct {
+type Config struct {
+	Flags    *flag.FlagSet
 	Source   string
 	FileName string
-	isFile   bool
+	IsFile   bool
 }
 
-func (u *UserInput) ValidateArgs() error {
-	if u.Source == "" {
+func NewConfig(args []string) (Config, error) {
+	c := Config{}
+
+	fs := flag.NewFlagSet("cheat-sh", flag.ContinueOnError)
+	fs.StringVar(&c.Source, "s", "", "Name of `resourse` to download from cheat.sh/")
+	fs.StringVar(&c.FileName, "o", "", "Write to `file` instead of stdin")
+
+	err := fs.Parse(args)
+	if err != nil {
+		return c, err
+	}
+
+	if fs.NArg() != 0 {
+		return c, errors.New("positional arguments specified")
+	}
+
+	c.Flags = fs
+
+	return c, nil
+}
+
+func (c *Config) ValidateArgs() error {
+	if c.Source == "" {
 		return errors.New("must specify a name of resourse from cheat.sh/")
 	}
 
-	u.isFile = isFlagPassed("o")
-	if u.isFile && u.FileName == "" {
+	passed := c.isFlagPassed("o")
+	if passed && c.FileName == "" {
 		return errors.New("option -o: requires parameter")
 	}
+	c.IsFile = passed && c.FileName != ""
 
 	return nil
 }
 
-func ParseArgs(args []string) (UserInput, error) {
-	u := UserInput{}
-
-	fs := flag.NewFlagSet("cheat-sh", flag.ContinueOnError)
-	fs.StringVar(&u.Source, "s", "", "Name of `resourse` to download from cheat.sh/")
-	fs.StringVar(&u.FileName, "o", "", "Write to file instead of stdin")
-
-	err := fs.Parse(args)
-	if err != nil {
-		return u, err
-	}
-
-	if fs.NArg() != 0 {
-		return u, errors.New("positional arguments specified")
-	}
-
-	return u, nil
-}
-
-func isFlagPassed(name string) bool {
+func (c *Config) isFlagPassed(name string) bool {
 	found := false
-	flag.Visit(func(f *flag.Flag) {
+	c.Flags.Visit(func(f *flag.Flag) {
 		if f.Name == name {
 			found = true
 		}
