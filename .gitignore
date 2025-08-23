@@ -1,5 +1,7 @@
+# ignore
 out/
 bin/
 *.md
 
+# unignore
 !readme.md
